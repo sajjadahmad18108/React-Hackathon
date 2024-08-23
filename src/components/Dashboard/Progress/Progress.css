@@ -1,0 +1,21 @@
+.progress{
+    text-align: center;
+    width: 300px;
+    padding: 20px;
+}
+  .taskForm {
+    width: 100%;
+    margin-top: 10px;
+  }
+  
+  .taskList {
+    margin-top: 20px;
+  }
+  
+  .taskItem {
+    padding: 10px;
+    background-color: rgb(129, 129, 162);
+    border: 1px solid #ddd;
+    margin-bottom: 5px;
+    border-radius: 4px;
+  }

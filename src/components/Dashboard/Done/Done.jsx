@@ -1,0 +1,111 @@
+import React, { useEffect, useState } from 'react';
+import Button from '@mui/material/Button';
+import AddIcon from '@mui/icons-material/Add';
+import Stack from '@mui/material/Stack';
+import { TextField } from '@mui/material';
+import './Done.css';
+import { db } from '../../../Firebase/Firebase'; // Import your Firebase configuration
+import { collection, addDoc, query, orderBy, onSnapshot } from 'firebase/firestore'; // Import Firestore functions
+
+export const Done = () => {
+    const [showInput, setShowInput] = useState(false);
+    const [task, setTask] = useState('');
+    const [tasks, setTasks] = useState([]);
+
+    useEffect(() => {
+        // Create a query to get tasks from the "Done" collection ordered by timestamp
+        const q = query(collection(db, 'Done'), orderBy('timestamp', 'desc'));
+        
+        // Subscribe to real-time updates from Firestore
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            // Map the documents to task objects
+            const tasksArray = querySnapshot.docs.map(doc => ({
+                id: doc.id, // Store document ID
+                ...doc.data() // Spread document data
+            }));
+            // Update the tasks state
+            setTasks(tasksArray);
+        });
+
+        // Cleanup function to unsubscribe from Firestore updates
+        return () => unsubscribe();
+    }, []);
+
+    const handleClick = () => {
+        setShowInput(true);
+    };
+
+    const handleInputChange = (e) => {
+        setTask(e.target.value);
+    };
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        if (task.trim()) {
+            try {
+                // Add a new document to the "Done" collection
+                const docRef = await addDoc(collection(db, "Done"), {
+                    task: task,
+                    timestamp: new Date(),
+                    status: 'Done'
+                });
+                console.log("Document written with ID: ", docRef.id);
+                setTasks([{ id: docRef.id, task: task, status: 'Done' }, ...tasks]);
+                setTask('');
+                setShowInput(false);
+            } catch (e) {
+                console.error("Error adding document: ", e);
+            }
+        }
+    };
+
+    return (
+        <div className='done'>
+            <h3>Completed</h3>
+            <Stack
+                direction="row"
+                spacing={2}
+                sx={{
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                }}>
+                <Button
+                    sx={{
+                        textAlign: 'center',
+                        borderColor: 'blue',
+                        width: '100%',
+                        padding: '2px 7px',
+                        color: 'blue',
+                        '&:hover': {
+                            borderColor: 'lightblue',
+                            backgroundColor: 'lightblue',
+                        },
+                    }}
+                    onClick={handleClick}
+                    variant="outlined"
+                    startIcon={<AddIcon sx={{ color: 'blue', fontSize: '1.5rem' }} />}>
+                    Add Task
+                </Button>
+            </Stack>
+            {showInput && (
+                <form onSubmit={handleSubmit} className='taskForm'>
+                    <TextField
+                        variant="outlined"
+                        placeholder="Enter your task"
+                        value={task}
+                        onChange={handleInputChange}
+                        sx={{ width: '100%' }}
+                    />
+                </form>
+            )}
+
+            <div className="taskList">
+                {tasks.map((taskItem) => (
+                    <div key={taskItem.id} className="taskItem">
+                        {taskItem.task}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
